@@ -6,41 +6,40 @@ dotenv.config();
 
 const app = express();
 
-// ✅ PROPER CORS CONFIG (FIXED)
+// ✅ FIXED CORS CONFIG
 const allowedOrigins = [
   "http://localhost:8080",
   "http://192.168.1.8:8080",
-  "https://sarroz-connect-lpcw.vercel.app/"
+  "https://sarroz-connect-lpcw.vercel.app" // ❗ removed trailing slash
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps, curl, postman)
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // Postman / mobile
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
-    } else {
-      return callback(new Error("CORS not allowed"));
     }
+
+    return callback(new Error("CORS not allowed: " + origin));
   },
   credentials: true,
 }));
 
-// ✅ HANDLE PREFLIGHT
-app.options('*', cors());
+// ❌ REMOVE THIS (causes crash)
+// app.options('*', cors());
 
 // Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging
+// Logging
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
 });
 
-// Health check
+// Health
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -65,7 +64,7 @@ app.use('/api/v1/mpesa', mpesaRoutes);
 
 app.use('/api/reports', require('./routes/reportRoutes'));
 
-// 404 handler
+// 404
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -73,11 +72,10 @@ app.use((req, res) => {
   });
 });
 
-// ✅ ERROR HANDLER (IMPORTANT FOR CORS)
+// ✅ ERROR HANDLER WITH CORS
 app.use((err, req, res, next) => {
   console.error("Error:", err.message);
 
-  // VERY IMPORTANT: still send CORS headers on errors
   res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
 
   res.status(err.status || 500).json({
