@@ -9,54 +9,14 @@ const app = express();
 
 // Body parser middleware
 app.use(express.json());
-app.use(expreimport axios from "axios";
-
-// Use environment variable or default to Render backend
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://sarroz-backend.onrender.com";
-
-// Create axios instance with base configuration
-export const api = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  timeout: 30000,
-});
-
-// Request interceptor to add auth token to every request
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor for handling errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Handle 401 Unauthorized - token expired or invalid
-    if (error.response?.status === 401) {
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_user");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);ss.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 
 // Enable CORS - Allow multiple origins
 const allowedOrigins = [
   'http://localhost:8080',
   'http://localhost:5173',
   'https://sarroz-connect-lpcw.vercel.app',
-  'https://sarroz-connect.vercel.app'  // Add your production Vercel URL
+  //'https://sarroz-connect.vercel.app'
 ];
 
 app.use(cors({
