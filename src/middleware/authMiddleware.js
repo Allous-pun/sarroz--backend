@@ -19,7 +19,8 @@ const protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-password');
+    // FIXED: Populate branch field so non-admin users have their branch info
+    req.user = await User.findById(decoded.id).select('-password').populate('branch', '_id name location');
     
     if (!req.user) {
       return res.status(401).json({
@@ -76,15 +77,18 @@ const checkBranchAccess = (req, res, next) => {
     return next();
   }
 
-  const requestedBranchId = req.params.branchId || req.body.branch;
+  const requestedBranchId = req.params.branchId || req.body.branchId || req.body.branch;
   
   // If no branch specified in request
   if (!requestedBranchId) {
     return next();
   }
 
-  // Branch managers and cashiers can only access their assigned branch
-  if (req.user.branch && req.user.branch.toString() !== requestedBranchId) {
+  // Get branch ID from user (handles both populated and unpopulated)
+  const userBranchId = req.user.branch?._id || req.user.branch;
+  
+  // Branch managers, cashiers, whatsapp_sales can only access their assigned branch
+  if (userBranchId && userBranchId.toString() !== requestedBranchId) {
     return res.status(403).json({
       success: false,
       message: 'You do not have access to this branch'

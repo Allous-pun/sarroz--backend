@@ -34,9 +34,40 @@ app.get('/api/health', (req, res) => {
 
 // Auth routes
 app.use('/api/auth', require('./routes/authRoutes'));
+
+// Permission routes
 app.use('/api/permissions', require('./routes/permissionRoutes'));
 
-// 404 handler for undefined routes (FIXED - removed '*')
+// Branch routes
+app.use('/api/branches', require('./routes/branchRoutes'));
+
+// Category routes
+app.use('/api/categories', require('./routes/categoryRoutes'));
+
+// Product routes
+app.use('/api/products', require('./routes/productRoutes'));
+
+// Settings routes
+app.use('/api/settings', require('./routes/settingsRoutes'));
+
+// Sale routes (POS)
+app.use('/api/sales', require('./routes/saleRoutes'));
+
+// Order routes (WhatsApp orders)
+app.use('/api/orders', require('./routes/orderRoutes'));
+
+// Receipt routes
+app.use('/api/receipts', require('./routes/receiptRoutes'));
+
+// ========== ADD M-PESA ROUTES HERE ==========
+const mpesaRoutes = require('./routes/mpesaRoutes');
+app.use('/api/v1/mpesa', mpesaRoutes);
+// ============================================
+
+// Report routes
+app.use('/api/reports', require('./routes/reportRoutes'));
+
+// 404 handler for undefined routes
 app.use((req, res) => {
   res.status(404).json({
     success: false,
