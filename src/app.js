@@ -11,10 +11,27 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Enable CORS
+// Enable CORS - Allow multiple origins
+const allowedOrigins = [
+  'http://localhost:8080',
+  'http://localhost:5173',
+  'https://sarroz-connect-lpcw.vercel.app',
+  'https://sarroz-connect.vercel.app'  // Add your production Vercel URL
+];
+
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:5173'],
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Request logging
@@ -59,10 +76,9 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 // Receipt routes
 app.use('/api/receipts', require('./routes/receiptRoutes'));
 
-// ========== ADD M-PESA ROUTES HERE ==========
+// M-PESA ROUTES
 const mpesaRoutes = require('./routes/mpesaRoutes');
 app.use('/api/v1/mpesa', mpesaRoutes);
-// ============================================
 
 // Report routes
 app.use('/api/reports', require('./routes/reportRoutes'));
