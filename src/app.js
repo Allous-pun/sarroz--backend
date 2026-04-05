@@ -2,29 +2,37 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 
-// Body parser middleware
+// ✅ PROPER CORS CONFIG (FIXED)
+const allowedOrigins = [
+  "http://localhost:8080",
+  "http://192.168.1.8:8080",
+  "https://sarroz-connect-lpcw.vercel.app/"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps, curl, postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("CORS not allowed"));
+    }
+  },
+  credentials: true,
+}));
+
+// ✅ HANDLE PREFLIGHT
+app.options('*', cors());
+
+// Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// MANUAL CORS MIDDLEWARE - Place this BEFORE any routes
-app.use((req, res, next) => {
-  // Allow any origin for testing
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Handle preflight requests immediately
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
 
 // Request logging
 app.use((req, res, next) => {
@@ -32,7 +40,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check route
+// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -41,41 +49,23 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Auth routes
+// Routes
 app.use('/api/auth', require('./routes/authRoutes'));
-
-// Permission routes
 app.use('/api/permissions', require('./routes/permissionRoutes'));
-
-// Branch routes
 app.use('/api/branches', require('./routes/branchRoutes'));
-
-// Category routes
 app.use('/api/categories', require('./routes/categoryRoutes'));
-
-// Product routes
 app.use('/api/products', require('./routes/productRoutes'));
-
-// Settings routes
 app.use('/api/settings', require('./routes/settingsRoutes'));
-
-// Sale routes (POS)
 app.use('/api/sales', require('./routes/saleRoutes'));
-
-// Order routes (WhatsApp orders)
 app.use('/api/orders', require('./routes/orderRoutes'));
-
-// Receipt routes
 app.use('/api/receipts', require('./routes/receiptRoutes'));
 
-// M-PESA ROUTES
 const mpesaRoutes = require('./routes/mpesaRoutes');
 app.use('/api/v1/mpesa', mpesaRoutes);
 
-// Report routes
 app.use('/api/reports', require('./routes/reportRoutes'));
 
-// 404 handler for undefined routes
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -83,9 +73,13 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler
+// ✅ ERROR HANDLER (IMPORTANT FOR CORS)
 app.use((err, req, res, next) => {
-  console.error(`Error: ${err.message}`);
+  console.error("Error:", err.message);
+
+  // VERY IMPORTANT: still send CORS headers on errors
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal Server Error'
